@@ -32,6 +32,8 @@ class Job:
     arrive_station_code = ''
     from_time = timedelta(hours=0)
     to_time = timedelta(hours=24)
+    arrival_from_time = timedelta(hours=0)
+    arrival_to_time = timedelta(hours=24)
 
     account_key = 0
     allow_seats = []
@@ -40,6 +42,7 @@ class Job:
     current_order_seat = None
     allow_train_numbers = []
     except_train_numbers = []
+    specific_train_stations = []  # 按车站名称筛选车次
     members = []
     member_num = 0
     member_num_take = 0  # 最终提交的人数
@@ -103,6 +106,19 @@ class Job:
                 parts = period['to'].split(':')
                 if len(parts) == 2:
                     self.to_time = timedelta(
+                        hours=int(parts[0]), seconds=int(parts[1]))
+        # 到达时间筛选
+        arrival_interval = info.get('arrival_interval')
+        if isinstance(arrival_interval, dict):
+            if 'from' in arrival_interval:
+                parts = arrival_interval['from'].split(':')
+                if len(parts) == 2:
+                    self.arrival_from_time = timedelta(
+                        hours=int(parts[0]), seconds=int(parts[1]))
+            if 'to' in arrival_interval:
+                parts = arrival_interval['to'].split(':')
+                if len(parts) == 2:
+                    self.arrival_to_time = timedelta(
                         hours=int(parts[0]), seconds=int(parts[1]))
 
     def update_interval(self):
@@ -283,6 +299,35 @@ class Job:
             hours=int(time_parts[0]), seconds=int(time_parts[1]))
         if left_time < self.from_time or left_time > self.to_time:
             return False
+
+        train_arrive_time = self.get_info_of_train_arrive_time()
+        arrive_time_parts = train_arrive_time.split(':')
+
+        arrive_time = timedelta(
+            hours=int(arrive_time_parts[0]), seconds=int(arrive_time_parts[1]))
+        if arrive_time < self.arrival_from_time or arrive_time > self.arrival_to_time:
+            return False
+
+        if self.specific_train_stations:
+            left_station = self.get_info_of_left_station()
+            arrival_station = self.get_info_of_arrive_station()
+
+            from_station = self.specific_train_stations.get('from_station')
+            to_station = self.specific_train_stations.get('to_station')
+
+            if from_station is not None:
+                if not isinstance(from_station, list):
+                    from_station = [from_station]
+
+                if left_station not in from_station:
+                    return False
+
+            if to_station is not None:
+                if not isinstance(to_station, list):
+                    to_station = [to_station]
+
+                if arrival_station not in to_station:
+                    return False
 
         if self.except_train_numbers:
             return self.get_info_of_train_number().upper() not in map(str.upper, self.except_train_numbers)
