@@ -152,18 +152,14 @@ class App:
 class Dict(dict):
     def get(self, key, default=None, sep='.'):
         keys = key.split(sep)
-        for i, key in enumerate(keys):
+        value = self
+        for key in keys:
             try:
-                value = self[key]
-                if len(keys[i + 1:]) and isinstance(value, Dict):
-                    return value.get(sep.join(keys[i + 1:]), default=default, sep=sep)
-                return value
-            except:
-                return self.dict_to_dict(default)
-
-    def __getitem__(self, k):
-        return self.dict_to_dict(super().__getitem__(k))
-
-    @staticmethod
-    def dict_to_dict(value):
-        return Dict(value) if isinstance(value, dict) else value
+                if isinstance(value, dict) and key in value:
+                    value = value[key]
+                else:
+                    return default
+            except Exception as e:
+                print('exception:', e)
+                return default
+        return value
