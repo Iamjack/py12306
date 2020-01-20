@@ -58,7 +58,6 @@ class Request(HTMLSession):
                 from py12306.config import Config
                 kwargs['timeout'] = Config().TIME_OUT_OF_REQUEST
             response = super().request(*args, **kwargs)
-            return response
         except RequestException as e:
             from py12306.log.common_log import CommonLog
             if e.response:
@@ -66,9 +65,10 @@ class Request(HTMLSession):
             else:
                 response = HTMLResponse(HTMLSession)
                 # response.status_code = 500
-                expand_class(response, 'json', Request.json)
             response.reason = response.reason if response.reason else CommonLog.MESSAGE_RESPONSE_EMPTY_ERROR
-            return response
+
+        expand_class(response, 'json', Request.json)
+        return response
 
     def cdn_request(self, url: str, cdn=None, method='GET', **kwargs):
         from py12306.helpers.api import HOST_URL_OF_12306
