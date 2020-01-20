@@ -83,6 +83,9 @@ class Job:
         self.left_dates = info.get('left_dates')
         self.stations = info.get('stations')
         self.stations = [self.stations] if isinstance(self.stations, dict) else self.stations
+        # 按车站名称筛选
+        self.specific_train_stations = info.get('specific_train_stations')
+
         if not self.job_name:  # name 不能被修改
             self.job_name = info.get('job_name',
                                      '{} -> {}'.format(self.stations[0]['left'], self.stations[0]['arrive']))
